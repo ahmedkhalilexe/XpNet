@@ -1,9 +1,30 @@
+# Server configuration
 server:
+  # The port on which the XpNet proxy will listen
   listen: 8080
+
+# Advanced HTTP transport settings (optional)
+# These settings control how the proxy connects to upstream targets
 transport:
+  # Maximum total idle (keep-alive) connections across all hosts
+  # max_idle_conns: 1000
+  # Maximum idle (keep-alive) connections per host
+  # max_idle_conns_per_host: 100
+  # How long an idle connection is kept open (e.g., 90s, 2m)
+  # idle_conn_timeout: 90s
+  # Total timeout for the request to the upstream target (e.g., 30s)
+  # timeout: 30s
+  # Set to true to disable Gzip compression
+  # disable_compression: false
+  # Force the use of HTTP/2 for upstream connections
   force_http2: true
+
+# List of routes for the reverse proxy
+# Each route matches a path prefix and forwards to one or more targets
 routes:
   - path: /
+    # targets can be a single 'target' string or a list of 'targets'
+    # When multiple targets are provided, Round Robin load balancing is used
     targets:
       - http://localhost:8081
       - http://localhost:8082
