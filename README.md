@@ -64,3 +64,17 @@ routes:
       - http://localhost:8081
       - http://localhost:8082
 ```
+
+## Future Enhancements & TODOs
+
+To make this a fully complete production-grade reverse proxy, the following features are planned:
+
+- **Active Health Checks**: Periodically ping upstream targets and automatically remove failing nodes from the Round Robin rotation.
+- **X-Forwarded Headers**: Inject standard proxy headers (`X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`) before forwarding requests.
+- **Hop-by-Hop Headers Management**: Remove headers meant only for a single transport-level connection (e.g., `Connection`, `Keep-Alive`, `Te`, etc.).
+- **Graceful Shutdown**: Intercept termination signals and finish in-flight requests before exiting.
+- **Structured Logging**: Replace `fmt.Println` and `log.Println` with a leveled structured logger (like `slog` or `zap`).
+- **Streaming & WebSockets Support**: Proper handling of the `Connection: Upgrade` header to support WebSockets or SSEs.
+- **Retry Mechanism**: Automatically retry requests on the next available target if the current one fails or disconnects.
+- **TLS/HTTPS Support**: Allow terminating SSL/TLS traffic directly at the proxy.
+
