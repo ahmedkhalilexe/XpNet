@@ -1,0 +1,14 @@
+# Binaries and executables
+/[Aa]pp
+/main
+/main.exe
+*.exe
+*.bin
+*.test
+
+# IDEs and OS
+.vscode/
+.idea/
+
+# Environment secrets
+.env

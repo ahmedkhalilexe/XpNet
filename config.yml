@@ -1,0 +1,13 @@
+server:
+  listen: 8080
+transport:
+  force_http2: true
+routes:
+  - path: /
+    targets:
+      - http://localhost:8081
+      - http://localhost:8082
+      - http://localhost:8083
+
+  
+
