@@ -26,9 +26,10 @@ routes:
     # targets can be a single 'target' string or a list of 'targets'
     # When multiple targets are provided, Round Robin load balancing is used
     targets:
-      - http://localhost:8081
-      - http://localhost:8082
-      - http://localhost:8083
+      - url: http://localhost:8081
+        # weight: default 1
+      - url: http://localhost:8082
+      - url: http://localhost:8083
 
   
 

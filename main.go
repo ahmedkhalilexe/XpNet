@@ -38,13 +38,19 @@ type Server struct {
 type Route struct {
 	Path    string   `yaml:"path"`
 	Target  *string  `yaml:"target"`
-	Targets []string `yaml:"targets"`
+	Targets []Target `yaml:"targets"`
+}
+
+type Target struct {
+	Url    string `yaml:"url"`
+	Weight *int   `yaml:"weight"`
 }
 
 type compiledRoute struct {
-	prefix    string
-	upstreams []string
-	counter   uint64
+	prefix      string
+	upstreams   []Target
+	counter     uint64
+	totalWeight int
 }
 
 type Proxy struct {
@@ -124,13 +130,13 @@ func buildHTTPClient(transportConfig *Transport) (*http.Client, error) {
 	return client, nil
 }
 
-func (r *Route) normalizeTargets() ([]string, error) {
+func (r *Route) normalizeTargets() ([]Target, error) {
 	if r.Target != nil && len(r.Targets) > 0 {
 		return nil, fmt.Errorf("route %s: cannot specify both target and targets", r.Path)
 	}
 
 	if r.Target != nil {
-		return []string{*r.Target}, nil
+		return []Target{{Url: *r.Target}}, nil
 	}
 
 	if len(r.Targets) > 0 {
@@ -143,23 +149,46 @@ func (r *Route) normalizeTargets() ([]string, error) {
 func (p *Proxy) initializeRoutes(config Config) {
 	for _, route := range config.Routes {
 		upstreams, err := route.normalizeTargets()
-
 		if err != nil {
 			log.Fatal(err)
 		}
+		totalWeight := 0
+		for _, upstream := range upstreams {
+			if upstream.Weight != nil {
+				totalWeight += *upstream.Weight
+			} else {
+				totalWeight += 1
+			}
+		}
 
 		p.routes = append(p.routes, compiledRoute{
-			prefix:    route.Path,
-			upstreams: upstreams,
-			counter:   0,
+			prefix:      route.Path,
+			upstreams:   upstreams,
+			counter:     0,
+			totalWeight: totalWeight,
 		})
 	}
 }
 
-func (cr *compiledRoute) NextUpstream() string {
+func (cr *compiledRoute) NextUpstream() Target {
 	n := atomic.AddUint64(&cr.counter, 1)
-	idx := int(n % uint64(len(cr.upstreams)))
-	return cr.upstreams[idx]
+	position := int((n - 1) % uint64(cr.totalWeight))
+	accumulated := 0
+	for idx, upstream := range cr.upstreams {
+		if upstream.Weight != nil {
+			accumulated += *upstream.Weight
+		} else {
+			accumulated += 1
+		}
+		fmt.Println("N: ", n)
+		fmt.Println("Current url: ", upstream.Url)
+		fmt.Println("Position: ", position, "Counter weight: ", accumulated)
+		fmt.Println("Index: ", idx)
+		if position < accumulated {
+			return cr.upstreams[idx]
+		}
+	}
+	return cr.upstreams[len(cr.upstreams)-1]
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +198,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for i := range p.routes {
 		if strings.HasPrefix(requestPath, p.routes[i].prefix) {
-			target = p.routes[i].NextUpstream()
+			target = p.routes[i].NextUpstream().Url
 			break
 		}
 	}

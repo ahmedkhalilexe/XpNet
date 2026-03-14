@@ -61,8 +61,9 @@ server:
 routes:
   - path: /api
     targets:
-      - http://localhost:8081
-      - http://localhost:8082
+      - url: http://localhost:8081
+        weight: 2
+      - url: http://localhost:8082
 ```
 
 ## Future Enhancements & TODOs
